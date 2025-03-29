@@ -12,7 +12,8 @@
         "variant": "c",
         "set.h": "c",
         "string.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "stdatomic.h": "c"
     },
     "makefile.configureOnOpen": true
 }
