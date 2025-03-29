@@ -50,12 +50,12 @@ bool set_insert(Set *set, ListHead *key) {
     }
     ListHead *prec, *succ;
     bool b = __set_find(set, key, &prec, &succ);
-    if (b) {
+    if (!b) {
         prec->next = key;
         key->next = succ;
     }
     pthread_spin_unlock(&set->lock);
-    return b;
+    return b ? false : true;
 }
 
 ListHead* set_remove(Set *set, ListHead *key) {

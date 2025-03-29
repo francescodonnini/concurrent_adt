@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <pthread.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,16 +17,17 @@ typedef struct ThreadState {
     short int x16v[3];
     long      stats;
     Stack     *stack;
+    bool      quit;
 } ThreadState;
 
-typedef struct IntList {
+typedef struct LongList {
     struct ListHead list;
     int key;
-} IntList;
+} LongList;
 
 int icmp(struct ListHead *a, struct ListHead *b) {
-    IntList *m = container_of(a, IntList, list);
-    IntList *n = container_of(b, IntList, list);
+    LongList *m = container_of(a, LongList, list);
+    LongList *n = container_of(b, LongList, list);
     int d = m->key - n->key;
     if (d > 0) {
         return 1;
@@ -42,15 +44,15 @@ static inline int random_action(ThreadState *s) {
 
 static void *thread_fn(void *args) {
     ThreadState *s = (ThreadState*)args;
-    for (;;) {
+    while (!s->quit) {
         int a = random_action(s);
         if (a == ACTION_PUSH) {
-            IntList *node = malloc(sizeof(IntList));
+            LongList *node = malloc(sizeof(LongList));
             stack_push(s->stack, &node->list);
         } else {
             ListHead *list = stack_pop(s->stack);
             if (list) {
-                IntList *node = container_of(list, IntList, list);
+                LongList *node = container_of(list, LongList, list);
                 free(node);
             }
         }
@@ -95,6 +97,7 @@ int main(int argc, const char **argv) {
     }
     int c = 0;
     for (int i = 0; i < n; ++i) {
+        state[i].quit = false;
         state[i].stack = &stack;
         state[i].stats = 0;
         if (pthread_create(&tid[i], NULL, thread_fn,  (void*)&state[i])) {
@@ -125,9 +128,11 @@ int main(int argc, const char **argv) {
         }
     }
     for (int i = 0; i < n; i++) {
-        pthread_cancel(tid[i]);
+        state[i].quit = true;
     }
-    
+    for (int i = 0; i < n; ++i) {
+        pthread_join(tid[i], NULL);
+    }
     long ops = 0;
     for (int i = 0; i < n; ++i) {
         ops += state->stats;
@@ -135,5 +140,12 @@ int main(int argc, const char **argv) {
     printf("total number of ops in %d seconds is %ld\n", observation_time, ops);
     free(tid);
     free(state);
+    ListHead *it = stack.head.next;
+    while (it != NULL) {
+        ListHead *next = it->next;
+        LongList *node = container_of(it, LongList, list);
+        free(node);
+        it = next;
+    }
     return 0;
 }

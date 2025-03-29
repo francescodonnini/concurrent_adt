@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <limits.h>
 #include <pthread.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -10,22 +11,23 @@
 #include <sys/time.h>
 #include <time.h>
 
-#define ACTION_PUSH 0
+#define ACTION_INSERT 0
 
 typedef struct ThreadState {
     short int x16v[3];
     long      stats;
     Set       *set;
+    bool      quit;
 } ThreadState;
 
-typedef struct IntList {
-    ListHead list;
-    int key;
-} IntList;
+typedef struct LongList {
+    struct ListHead list;
+    long key;
+} LongList;
 
-int icmp(ListHead *a, ListHead *b) {
-    IntList *m = container_of(a, IntList, list);
-    IntList *n = container_of(b, IntList, list);
+int lcmp(struct ListHead *a, struct ListHead *b) {
+    LongList *m = container_of(a, LongList, list);
+    LongList *n = container_of(b, LongList, list);
     int d = m->key - n->key;
     if (d > 0) {
         return 1;
@@ -40,19 +42,23 @@ static inline int random_action(ThreadState *s) {
     return jrand48(s->x16v) & 1;
 }
 
+static inline long randlong(short int x16v[3], int lo, int hi) {
+    return lo + (nrand48(x16v) % (hi - lo + 1));
+}
+
 static void *thread_fn(void *args) {
     ThreadState *s = (ThreadState*)args;
-    for (;;) {
+    while (!s->quit) {
         int a = random_action(s);
-        if (a == ACTION_PUSH) {
-            IntList *node = malloc(sizeof(IntList));
-            node->key = 0;
+        if (a == ACTION_INSERT) {
+            LongList *node = malloc(sizeof(LongList));
+            node->key = randlong(s->x16v, 0, 100);
             set_insert(s->set, &node->list);
         } else {
-            IntList node = {.key = 0};
+            LongList node = {.key=randlong(s->x16v, 0, 100)};
             ListHead *list = set_remove(s->set, &node.list);
             if (list) {
-                IntList *node = container_of(list, IntList, list);
+                LongList *node = container_of(list, LongList, list);
                 free(node);
             }
         }
@@ -82,8 +88,7 @@ int main(int argc, const char **argv) {
     }
     Set set;
     ListHead head, tail;
-    if (set_init(&set, &head, &tail, icmp)) {
-        printf("set_init failed, got error (%d) %s\n", errno, strerror(errno));
+    if (set_init(&set, &head, &tail, lcmp)) {
         return -1;
     }
     pthread_t *tid = malloc(n * sizeof(pthread_t));
@@ -91,17 +96,18 @@ int main(int argc, const char **argv) {
         printf("malloc failed, got error (%d) %s\n", errno, strerror(errno));
         return -1;
     }
-    ThreadState *states = malloc(n * sizeof(ThreadState));
-    if (!states) {
+    ThreadState *state = malloc(n * sizeof(ThreadState));
+    if (!state) {
         printf("malloc failed, got error (%d) %s\n", errno, strerror(errno));
         free(tid);
         return -1;
     }
     int c = 0;
     for (int i = 0; i < n; ++i) {
-        states[i].set = &set;
-        states[i].stats = 0;
-        if (pthread_create(&tid[i], NULL, thread_fn,  (void*)&states[i])) {
+        state[i].quit = false;
+        state[i].set = &set;
+        state[i].stats = 0;
+        if (pthread_create(&tid[i], NULL, thread_fn,  (void*)&state[i])) {
             break;
         }
         c++;
@@ -129,17 +135,24 @@ int main(int argc, const char **argv) {
         }
     }
     for (int i = 0; i < n; i++) {
-        pthread_cancel(tid[i]);
+        state[i].quit = true;
     }
-    
+    for (int i = 0; i < n; ++i) {
+        pthread_join(tid[i], NULL);
+    }
     long ops = 0;
     for (int i = 0; i < n; ++i) {
-        ops += states->stats;
+        ops += state->stats;
     }
     printf("total number of ops in %d seconds is %ld\n", observation_time, ops);
     free(tid);
-    free(states);
-    
-    
+    free(state);
+    ListHead *it = set.head->next;
+    while (it != set.tail) {
+        ListHead *next = it->next;
+        LongList *node = container_of(it, LongList, list);
+        free(node);
+        it = next;
+    }
     return 0;
 }
