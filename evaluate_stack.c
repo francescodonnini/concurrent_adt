@@ -25,19 +25,6 @@ typedef struct LongList {
     int key;
 } LongList;
 
-int icmp(struct ListHead *a, struct ListHead *b) {
-    LongList *m = container_of(a, LongList, list);
-    LongList *n = container_of(b, LongList, list);
-    int d = m->key - n->key;
-    if (d > 0) {
-        return 1;
-    } else if (!d) {
-        return 0;
-    } else {
-        return -1;
-    }
-}
-
 static inline int random_action(ThreadState *s) {
     return jrand48(s->x16v) & 1;
 }
@@ -106,9 +93,15 @@ int main(int argc, const char **argv) {
         c++;
     }
     if (c < n) {
-        while (--c >= 0) {
-            pthread_cancel(tid[c]);
+        for (int i = 0; i < c; ++i) {
+            state[i].quit = true;
         }
+        while (--c >= 0) {
+            pthread_join(tid[c], NULL);
+        }
+        free(tid);
+        free(state);
+        return -1;
     }
     struct timeval start;
     int err = gettimeofday(&start, NULL);

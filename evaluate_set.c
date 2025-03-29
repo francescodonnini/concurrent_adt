@@ -113,9 +113,13 @@ int main(int argc, const char **argv) {
         c++;
     }
     if (c < n) {
-        while (--c >= 0) {
-            pthread_cancel(tid[c]);
+        for (int i = 0; i < c; ++i) {
+            state[i].quit = true;
         }
+        while (--c >= 0) {
+            pthread_join(tid[c], NULL);
+        }
+        return -1;
     }
     struct timeval start;
     int err = gettimeofday(&start, NULL);
