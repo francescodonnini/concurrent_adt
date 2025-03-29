@@ -11,5 +11,6 @@
         "utility": "c",
         "variant": "c",
         "set.h": "c"
-    }
+    },
+    "makefile.configureOnOpen": true
 }

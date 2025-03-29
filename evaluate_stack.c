@@ -46,9 +46,9 @@ static void *thread_fn(void *args) {
         int a = random_action(s);
         if (a == ACTION_PUSH) {
             IntList *node = malloc(sizeof(IntList));
-            push(&s->stack, &node->list);
+            stack_push(s->stack, &node->list);
         } else {
-            ListHead *list = pop(&s->stack);
+            ListHead *list = stack_pop(s->stack);
             if (list) {
                 IntList *node = container_of(list, IntList, list);
                 free(node);
@@ -79,7 +79,7 @@ int main(int argc, const char **argv) {
         return -1;
     }
     Stack stack;
-    if (init(&stack)) {
+    if (stack_init(&stack)) {
         return -1;
     }
     pthread_t *tid = malloc(n * sizeof(pthread_t));
@@ -87,16 +87,17 @@ int main(int argc, const char **argv) {
         printf("malloc failed, got error (%d) %s\n", errno, strerror(errno));
         return -1;
     }
-    ThreadState *states = malloc(n * sizeof(ThreadState));
-    if (!states) {
+    ThreadState *state = malloc(n * sizeof(ThreadState));
+    if (!state) {
         printf("malloc failed, got error (%d) %s\n", errno, strerror(errno));
         free(tid);
         return -1;
     }
     int c = 0;
     for (int i = 0; i < n; ++i) {
-        states[i].stats = 0;
-        if (pthread_create(&tid[i], NULL, thread_fn,  (void*)&states[i])) {
+        state[i].stack = &stack;
+        state[i].stats = 0;
+        if (pthread_create(&tid[i], NULL, thread_fn,  (void*)&state[i])) {
             break;
         }
         c++;
@@ -123,17 +124,16 @@ int main(int argc, const char **argv) {
             printf("real elapsed time %f\n", elapsed);
         }
     }
-    for (int i = 0; i < n; i++)
-    {
+    for (int i = 0; i < n; i++) {
         pthread_cancel(tid[i]);
     }
     
     long ops = 0;
     for (int i = 0; i < n; ++i) {
-        ops += states->stats;
+        ops += state->stats;
     }
     printf("total number of ops in %d seconds is %ld\n", observation_time, ops);
     free(tid);
-    free(states);
+    free(state);
     return 0;
 }

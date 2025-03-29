@@ -37,6 +37,4 @@ bool set_find(Set *set, ListHead *key);
 bool set_insert(Set *set, ListHead *key);
 
 ListHead* set_remove(Set *set, ListHead *key);
-
-
 #endif
