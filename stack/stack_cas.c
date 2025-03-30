@@ -3,23 +3,28 @@
 #include <stdbool.h>
 
 int stack_init(Stack *s) {
+    s->head.next = NULL;
     return 0;
 }
 
 ListHead *stack_pop(Stack *s) {
-    ListHead *old_head = NULL;
-    bool b = true;
-    do {
-        old_head = s->head.next;
-        b = atomic_compare_exchange_strong(&s->head.next, old_head, old_head->next);
-    } while (!b);
-    return old_head;
+    for (;;) {
+        ListHead *old_head = s->head.next;
+        if (!old_head) {
+            break;
+        }
+        if (atomic_compare_exchange_strong(&s->head.next, &old_head, old_head->next)) {
+            return old_head;
+        }
+    }
+    return NULL;
 }
 
 void stack_push(Stack *s, ListHead *item) {
-    bool b = true;
-    do {
+    for (;;) {
         ListHead *old_head = s->head.next;
-        b = atomic_compare_exchange_strong(&s->head.next, old_head, item);
-    } while (!b);
+        if (atomic_compare_exchange_strong(&s->head.next, &old_head, item)) {
+            break;
+        }
+    }
 }

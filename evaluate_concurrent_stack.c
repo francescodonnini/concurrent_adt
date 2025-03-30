@@ -1,4 +1,5 @@
 #include "container_of.h"
+#include "randlong.h"
 #include "stack.h"
 #include <errno.h>
 #include <limits.h>
@@ -22,21 +23,8 @@ typedef struct ThreadState {
 
 typedef struct LongList {
     struct ListHead list;
-    int key;
+    long key;
 } LongList;
-
-int icmp(struct ListHead *a, struct ListHead *b) {
-    LongList *m = container_of(a, LongList, list);
-    LongList *n = container_of(b, LongList, list);
-    int d = m->key - n->key;
-    if (d > 0) {
-        return 1;
-    } else if (!d) {
-        return 0;
-    } else {
-        return -1;
-    }
-}
 
 static inline int random_action(ThreadState *s) {
     return jrand48(s->x16v) & 1;
@@ -48,15 +36,19 @@ static void *thread_fn(void *args) {
         int a = random_action(s);
         if (a == ACTION_PUSH) {
             LongList *node = malloc(sizeof(LongList));
-            stack_push(s->stack, &node->list);
+            if (!node) {
+                node->key = randlong(s->x16v, 0, 100);
+                stack_push(s->stack, &node->list);
+                s->stats++;
+            }
         } else {
             ListHead *list = stack_pop(s->stack);
             if (list) {
                 LongList *node = container_of(list, LongList, list);
                 free(node);
             }
+            s->stats++;
         }
-        s->stats++;
     }
     return NULL;
   }
@@ -106,9 +98,15 @@ int main(int argc, const char **argv) {
         c++;
     }
     if (c < n) {
-        while (--c >= 0) {
-            pthread_cancel(tid[c]);
+        for (int i = 0; i < c; ++i) {
+            state[i].quit = true;
         }
+        while (--c >= 0) {
+            pthread_join(tid[c], NULL);
+        }
+        free(tid);
+        free(state);
+        return -1;
     }
     struct timeval start;
     int err = gettimeofday(&start, NULL);

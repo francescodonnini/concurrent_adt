@@ -30,7 +30,7 @@ int set_init(
     Set *set,
     ListHead *head,
     ListHead *tail,
-    int (*default_cmp)(ListHead *a, ListHead *b));
+    int (*cmp)(ListHead *a, ListHead *b));
 
 bool set_find(Set *set, ListHead *key);
 

@@ -49,14 +49,13 @@ static void *thread_fn(void *args) {
         int a = random_action(s);
         if (a == ACTION_INSERT) {
             LongList *node = malloc(sizeof(LongList));
-            if (node) {
+            if (!node) {
                 node->key = randlong(s->x16v, 0, 100);
                 set_insert(s->set, &node->list);
                 s->stats++;
             }
         } else {
-            LongList node = {.key=randlong(s->x16v, 0, 100)};
-            ListHead *list = set_remove(s->set, &node.list);
+            ListHead *list = set_remove(s->set);
             if (list) {
                 LongList *node = container_of(list, LongList, list);
                 free(node);
@@ -72,17 +71,12 @@ static inline int strtol_error(int n) {
 }
 
 int main(int argc, const char **argv) {
-    if (--argc != 2) {
-        printf("see usage:\n%s <number of threads> <seconds>\n", argv[0]);
+    if (--argc != 1) {
+        printf("see usage:\n%s <seconds>\n", argv[0]);
         return -1;
     }
-    long n = strtol(argv[1], NULL, 10);
-    if (strtol_error(n) || n <= 0) {
-        printf("expected a positive number >= 1 but got %s\n", argv[1]);
-        return -1;
-    }
-    long observation_time = strtol(argv[2], NULL, 10);
-    if (strtol_error(n) || n <= 0) {
+    long observation_time = strtol(argv[1], NULL, 10);
+    if (strtol_error(observation_time) || observation_time <= 0) {
         printf("expected a positive number >= 1 but got %s\n", argv[1]);
         return -1;
     }
@@ -91,34 +85,9 @@ int main(int argc, const char **argv) {
     if (set_init(&set, &head, &tail, lcmp)) {
         return -1;
     }
-    pthread_t *tid = malloc(n * sizeof(pthread_t));
-    if (!tid) {
-        printf("malloc failed, got error (%d) %s\n", errno, strerror(errno));
-        return -1;
-    }
-    ThreadState *state = malloc(n * sizeof(ThreadState));
-    if (!state) {
-        printf("malloc failed, got error (%d) %s\n", errno, strerror(errno));
-        free(tid);
-        return -1;
-    }
-    int c = 0;
-    for (int i = 0; i < n; ++i) {
-        state[i].quit = false;
-        state[i].set = &set;
-        state[i].stats = 0;
-        if (pthread_create(&tid[i], NULL, thread_fn,  (void*)&state[i])) {
-            break;
-        }
-        c++;
-    }
-    if (c < n) {
-        for (int i = 0; i < c; ++i) {
-            state[i].quit = true;
-        }
-        while (--c >= 0) {
-            pthread_join(tid[c], NULL);
-        }
+    pthread_t tid;
+    ThreadState state = {.quit=false, .set=&set, .stats=0};
+    if (pthread_create(&tid, NULL, thread_fn,  (void*)&state)) {
         return -1;
     }
     struct timeval start;
@@ -138,20 +107,10 @@ int main(int argc, const char **argv) {
             printf("real elapsed time %f\n", elapsed);
         }
     }
-    for (int i = 0; i < n; i++) {
-        state[i].quit = true;
-    }
-    for (int i = 0; i < n; ++i) {
-        pthread_join(tid[i], NULL);
-    }
-    long ops = 0;
-    for (int i = 0; i < n; ++i) {
-        ops += state->stats;
-    }
-    printf("total number of ops in %d seconds is %ld\n", observation_time, ops);
-    free(tid);
-    free(state);
-    ListHead *it = set.head->next;
+    state.quit = true;
+    pthread_join(tid, NULL);
+    printf("total number of ops in %d seconds is %ld\n", observation_time, state.stats);
+    ListHead *it = set.head;
     while (it != set.tail) {
         ListHead *next = it->next;
         LongList *node = container_of(it, LongList, list);
