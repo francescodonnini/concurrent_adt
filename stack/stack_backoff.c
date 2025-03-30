@@ -6,6 +6,7 @@
 #include <time.h>
 
 int stack_init(Stack *s) {
+    s->head.next = NULL;
     return 0;
 }
 
