@@ -1,5 +1,5 @@
 #ifndef CONTAINER_OF_H
-#define CONTAINER_OF_H_
+#define CONTAINER_OF_H
 #include <stddef.h>
 
 /**
@@ -13,6 +13,4 @@
 #define container_of(ptr, type, member) ({				\
 	void *__mptr = (void *)(ptr);					\
 	((type *)(__mptr - offsetof(type, member))); })
-
-
 #endif

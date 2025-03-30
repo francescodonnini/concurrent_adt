@@ -6,7 +6,8 @@
                 "__GNUC__",
                 "__KERNEL__",
                 "MODULE",
-                "BACKOFF_VERSION"
+                "BACKOFF_VERSION",
+                "__USE_XOPEN2K"
             ],
             "includePath": [
                 "${workspaceFolder}/",
