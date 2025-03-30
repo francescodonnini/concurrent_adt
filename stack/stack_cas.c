@@ -7,12 +7,13 @@ int stack_init(Stack *s) {
 }
 
 ListHead *stack_pop(Stack *s) {
+    ListHead *old_head = NULL;
     bool b = true;
     do {
-        ListHead *old_head = s->head.next;
+        old_head = s->head.next;
         b = atomic_compare_exchange_strong(&s->head.next, old_head, old_head->next);
     } while (!b);
-    return NULL;
+    return old_head;
 }
 
 void stack_push(Stack *s, ListHead *item) {
