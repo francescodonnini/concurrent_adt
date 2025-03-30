@@ -1,4 +1,5 @@
 #include "container_of.h"
+#include "randlong.h"
 #include "stack.h"
 #include <errno.h>
 #include <limits.h>
@@ -22,7 +23,7 @@ typedef struct ThreadState {
 
 typedef struct LongList {
     struct ListHead list;
-    int key;
+    long key;
 } LongList;
 
 static inline int random_action(ThreadState *s) {
@@ -35,15 +36,19 @@ static void *thread_fn(void *args) {
         int a = random_action(s);
         if (a == ACTION_PUSH) {
             LongList *node = malloc(sizeof(LongList));
-            stack_push(s->stack, &node->list);
+            if (!node) {
+                node->key = randlong(s->x16v, 0, 100);
+                stack_push(s->stack, &node->list);
+                s->stats++;
+            }
         } else {
             ListHead *list = stack_pop(s->stack);
             if (list) {
                 LongList *node = container_of(list, LongList, list);
                 free(node);
             }
+            s->stats++;
         }
-        s->stats++;
     }
     return NULL;
   }

@@ -1,4 +1,5 @@
 #include "container_of.h"
+#include "randlong.h"
 #include "set.h"
 #include <errno.h>
 #include <limits.h>
@@ -42,18 +43,17 @@ static inline int random_action(ThreadState *s) {
     return jrand48(s->x16v) & 1;
 }
 
-static inline long randlong(short int x16v[3], int lo, int hi) {
-    return lo + (nrand48(x16v) % (hi - lo + 1));
-}
-
 static void *thread_fn(void *args) {
     ThreadState *s = (ThreadState*)args;
     while (!s->quit) {
         int a = random_action(s);
         if (a == ACTION_INSERT) {
             LongList *node = malloc(sizeof(LongList));
-            node->key = randlong(s->x16v, 0, 100);
-            set_insert(s->set, &node->list);
+            if (node) {
+                node->key = randlong(s->x16v, 0, 100);
+                set_insert(s->set, &node->list);
+                s->stats++;
+            }
         } else {
             LongList node = {.key=randlong(s->x16v, 0, 100)};
             ListHead *list = set_remove(s->set, &node.list);
@@ -61,8 +61,8 @@ static void *thread_fn(void *args) {
                 LongList *node = container_of(list, LongList, list);
                 free(node);
             }
+            s->stats++;
         }
-        s->stats++;
     }
     return NULL;
   }
