@@ -6,6 +6,7 @@ int stack_init(Stack *s) {
     if (err) {
         return err;
     }
+    s->head.next = NULL;
     return 0;
 }
 
@@ -16,7 +17,7 @@ ListHead *stack_pop(Stack *s) {
         return NULL;
     }
     ListHead *n = s->head.next;
-    if (n != NULL) {
+    if (n) {
         s->head.next = n->next;
     }
     pthread_mutex_unlock(mutex);
