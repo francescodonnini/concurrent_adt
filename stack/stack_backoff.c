@@ -1,8 +1,10 @@
 #include "random.h"
 #include "stack.h"
+#include <errno.h>
 #include <math.h>
 #include <stdatomic.h>
 #include <stdbool.h>
+#include <string.h>
 #include <time.h>
 
 int stack_init(Stack *s) {
@@ -26,9 +28,9 @@ static inline double get_sleep_time(double initial_sleep_time, long n) {
     return (1 << n) * initial_sleep_time;
 }
 
-static inline void nanosleepf(double secs) {
+static inline int nanosleepf(double secs) {
     struct timespec duration = {.tv_sec=0L, .tv_nsec=0L};
-    nanosleep(to_timespec(&duration, secs), NULL);
+    return nanosleep(to_timespec(&duration, secs), NULL);
 }
 
 ListHead *stack_pop(Stack *s) {
@@ -55,7 +57,10 @@ void stack_push(Stack *s, ListHead *item) {
     long n = 0;
     for (;;) {
         double sleep_time = get_sleep_time(initial_sleep_time, n++);
-        nanosleepf(sleep_time);
+        if (nanosleepf(sleep_time)) {
+            printf("nanosleep() failed, got error \"%s\" (%d)", strerror(errno), errno);
+            break;
+        }
         ListHead *old_head = s->head.next;
         item->next = old_head;
         if (atomic_compare_exchange_strong(&s->head.next, &old_head, item) || n >= backoff_spec->max_no_tries) {
