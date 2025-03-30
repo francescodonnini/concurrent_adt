@@ -2,6 +2,10 @@ set_mutex:
 	mkdir -p build
 	gcc set/set_mutex.c evaluate_set.c -o build/set_mutex -Iinclude -DMUTEX_VERSION -g
 
+stack_serial:
+	mkdir -p build
+	gcc set/set_serial.c evaluate_serial_set.c -o build/set_serial -Iinclude -g
+
 set_spinlock:
 	mkdir -p build
 	gcc set/set_spinlock.c evaluate_set.c -o build/set_spinlock -Iinclude -DSPINLOCK_VERSION -g
