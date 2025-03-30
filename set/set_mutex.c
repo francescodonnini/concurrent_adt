@@ -5,8 +5,8 @@ int set_init(
     Set *set,
     ListHead *head,
     ListHead *tail,
-    int (*default_cmp)(ListHead *a, ListHead *b)) {
-    __set_init(set, head, tail, default_cmp);
+    int (*cmp)(ListHead *a, ListHead *b)) {
+    __set_init(set, head, tail, cmp);
     int err = pthread_mutex_init(&set->lock, NULL);
     return err;
 }
