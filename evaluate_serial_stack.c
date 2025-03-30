@@ -1,4 +1,5 @@
 #include "container_of.h"
+#include "list.h"
 #include "random.h"
 #include "stack.h"
 #include <errno.h>
@@ -22,7 +23,7 @@ typedef struct ThreadState {
 } ThreadState;
 
 typedef struct LongList {
-    struct ListHead list;
+    ListHead list;
     long key;
 } LongList;
 
