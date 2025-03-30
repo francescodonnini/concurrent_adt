@@ -18,10 +18,6 @@ stack_cas:
 	mkdir -p build
 	gcc stack/stack_cas.c evaluate_concurrent_stack.c -o build/stack_cas -Iinclude -g -lpthread
 
-stack_cas_test:
-	mkdir -p build
-	gcc stack/stack_cas.c stack/stack_cas_test.c -o build/stack_cas_test -Iinclude -g -lpthread
-
 stack_mutex:
 	mkdir -p build
 	gcc stack/stack_mutex.c evaluate_concurrent_stack.c -o build/stack_mutex -Iinclude -DMUTEX_VERSION -g -lpthread

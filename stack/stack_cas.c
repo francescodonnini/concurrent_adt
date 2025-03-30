@@ -1,5 +1,4 @@
 #include "stack.h"
-#include <stdatomic.h>
 #include <stdbool.h>
 
 int stack_init(Stack *s) {
@@ -13,7 +12,7 @@ ListHead *stack_pop(Stack *s) {
         if (!old_head) {
             break;
         }
-        if (atomic_compare_exchange_strong(&s->head.next, &old_head, old_head->next)) {
+        if (__sync_bool_compare_and_swap((long*)s->head.next, old_head, old_head->next)) {
             return old_head;
         }
     }
@@ -24,7 +23,7 @@ void stack_push(Stack *s, ListHead *item) {
     for (;;) {
         ListHead *old_head = s->head.next;
         item->next = old_head;
-        if (atomic_compare_exchange_strong(&s->head.next, &old_head, item)) {
+        if (__sync_bool_compare_and_swap((long*)s->head.next, old_head, item)) {
             break;
         }
     }

@@ -2,7 +2,6 @@
 #include "stack.h"
 #include <errno.h>
 #include <math.h>
-#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -48,7 +47,7 @@ ListHead *stack_pop(Stack *s) {
         if (!old_head) {
             break;
         }
-        if (atomic_compare_exchange_strong(&s->head.next, &old_head, old_head->next) || n >= backoff_spec->max_no_tries) {
+        if (__sync_bool_compare_and_swap((long*)s->head.next, old_head, old_head->next) || n >= backoff_spec->max_no_tries) {
             return old_head;
         }
     }
@@ -67,7 +66,7 @@ void stack_push(Stack *s, ListHead *item) {
         }
         ListHead *old_head = s->head.next;
         item->next = old_head;
-        if (atomic_compare_exchange_strong(&s->head.next, &old_head, item) || n >= backoff_spec->max_no_tries) {
+        if (__sync_bool_compare_and_swap((long*)s->head.next, old_head, item) || n >= backoff_spec->max_no_tries) {
             break;
         }
     }
