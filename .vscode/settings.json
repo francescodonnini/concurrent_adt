@@ -17,7 +17,8 @@
         "random": "c",
         "random.h": "c",
         "stack.h": "c",
-        "pthread.h": "c"
+        "pthread.h": "c",
+        "list.h": "c"
     },
     "makefile.configureOnOpen": true
 }

@@ -38,6 +38,7 @@ static void *thread_fn(void *args) {
             LongList *node = malloc(sizeof(LongList));
             if (node) {
                 node->key = randlong(s->x16v, 0, 100);
+                node->list.next = NULL;
                 stack_push(s->stack, &node->list);
                 s->stats++;
             }

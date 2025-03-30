@@ -1,4 +1,5 @@
 #include "container_of.h"
+#include "list.h"
 #include "random.h"
 #include "stack.h"
 #include <errno.h>
@@ -20,7 +21,7 @@ typedef struct ThreadState {
 } ThreadState;
 
 typedef struct LongList {
-    struct ListHead list;
+    ListHead list;
     long key;
 } LongList;
 
@@ -36,6 +37,7 @@ static void *thread_fn(void *args) {
             LongList *node = malloc(sizeof(LongList));
             if (node) {
                 node->key = randlong(s->x16v, 0, 100);
+                node->list.next = NULL;
                 stack_push(s->stack, &node->list);
                 s->stats++;
             }
@@ -53,6 +55,16 @@ static void *thread_fn(void *args) {
 
 static inline int strtol_error(int n) {
     return n == 0 || n == LONG_MIN || n == LONG_MAX;
+}
+
+static void pop_all(Stack *stack) {
+    ListHead *it = stack->head.next;
+    while (it != NULL) {
+        ListHead *next = it->next;
+        LongList *node = container_of(it, LongList, list);
+        free(node);
+        it = next;
+    }
 }
 
 int main(int argc, const char **argv) {
@@ -139,19 +151,13 @@ int main(int argc, const char **argv) {
     for (int i = 0; i < n; ++i) {
         pthread_join(tid[i], NULL);
     }
-    long ops = 0;
-    for (int i = 0; i < n; ++i) {
-        ops += state->stats;
+    long ops = 0L;
+    for (size_t i = 0; i < n; ++i) {
+        ops += state[i].stats;
     }
     printf("total number of ops in %d seconds is %ld\n", observation_time, ops);
     free(tid);
     free(state);
-    ListHead *it = stack.head.next;
-    while (it != NULL) {
-        ListHead *next = it->next;
-        LongList *node = container_of(it, LongList, list);
-        free(node);
-        it = next;
-    }
+    pop_all(&stack);
     return 0;
 }
