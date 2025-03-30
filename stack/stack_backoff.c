@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdatomic.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <string.h>
 #include <time.h>
 
@@ -39,7 +40,10 @@ ListHead *stack_pop(Stack *s) {
     long n = 0;
     for(;;) {
         double sleep_time = get_sleep_time(initial_sleep_time, n++);
-        nanosleepf(sleep_time);
+        if (nanosleepf(sleep_time)) {
+            printf("nanosleep() failed, got error \"%s\" (%d)", strerror(errno), errno);
+            break;
+        }
         ListHead *old_head = s->head.next;
         if (!old_head) {
             break;
