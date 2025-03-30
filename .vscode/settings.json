@@ -14,7 +14,9 @@
         "string.h": "c",
         "stdlib.h": "c",
         "stdatomic.h": "c",
-        "random": "c"
+        "random": "c",
+        "random.h": "c",
+        "stack.h": "c"
     },
     "makefile.configureOnOpen": true
 }

@@ -1,7 +1,9 @@
 #include "stack.h"
+#include <bits/pthreadtypes.h>
 
 int stack_init(Stack *s) {
-    int err = pthread_spin_init(&s->lock, PTHREAD_PROCESS_PRIVATE);
+    pthread_spinlock_t *lock = (pthread_spinlock_t*)s->ctx;
+    int err = pthread_spin_init(lock, PTHREAD_PROCESS_PRIVATE);
     if (err) {
         return err;
     }
@@ -10,7 +12,8 @@ int stack_init(Stack *s) {
 }
 
 ListHead *stack_pop(Stack *s) {
-    int err = pthread_spin_lock(&s->lock);
+    pthread_spinlock_t *lock = (pthread_spinlock_t*)s->ctx;
+    int err = pthread_spin_lock(lock);
     if (err) {
         return NULL;
     }
@@ -18,16 +21,17 @@ ListHead *stack_pop(Stack *s) {
     if (n != NULL) {
         s->head.next = n->next;
     }
-    pthread_spin_unlock(&s->lock);
+    pthread_spin_unlock(lock);
     return n;
 }
 
 void stack_push(Stack *s, ListHead *item) {
-    int err = pthread_spin_lock(&s->lock);
+    pthread_spinlock_t *lock = (pthread_spinlock_t*)s->ctx;
+    int err = pthread_spin_lock(lock);
     if (err) {
         return;
     }
     item->next = s->head.next;
     s->head.next = item;
-    pthread_spin_unlock(&s->lock);
+    pthread_spin_unlock(lock);
 }

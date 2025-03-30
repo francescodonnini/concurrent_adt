@@ -49,7 +49,7 @@ static void *thread_fn(void *args) {
         int a = random_action(s);
         if (a == ACTION_INSERT) {
             LongList *node = malloc(sizeof(LongList));
-            if (!node) {
+            if (node) {
                 node->key = randlong(s->x16v, 0, 100);
                 set_insert(s->set, &node->list);
                 s->stats++;

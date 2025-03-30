@@ -1,7 +1,8 @@
 #include "stack.h"
 
 int stack_init(Stack *s) {
-    int err = pthread_mutex_init(&s->lock, NULL);
+    pthread_mutex_t *mutex = (pthread_mutex_t*)s->ctx;
+    int err = pthread_mutex_init(mutex, NULL);
     if (err) {
         return err;
     }
@@ -9,7 +10,8 @@ int stack_init(Stack *s) {
 }
 
 ListHead *stack_pop(Stack *s) {
-    int err = pthread_mutex_lock(&s->lock);
+    pthread_mutex_t *mutex = (pthread_mutex_t*)s->ctx;
+    int err = pthread_mutex_lock(mutex);
     if (err) {
         return NULL;
     }
@@ -17,16 +19,17 @@ ListHead *stack_pop(Stack *s) {
     if (n != NULL) {
         s->head.next = n->next;
     }
-    pthread_mutex_unlock(&s->lock);
+    pthread_mutex_unlock(mutex);
     return n;
 }
 
 void stack_push(Stack *s, ListHead *item) {
-    int err = pthread_mutex_lock(&s->lock);
+    pthread_mutex_t *mutex = (pthread_mutex_t*)s->ctx;
+    int err = pthread_mutex_lock(mutex);
     if (err) {
         return;
     }
     item->next = s->head.next;
     s->head.next = item;
-    pthread_mutex_unlock(&s->lock);
+    pthread_mutex_unlock(mutex);
 }

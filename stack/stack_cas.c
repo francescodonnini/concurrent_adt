@@ -23,6 +23,7 @@ ListHead *stack_pop(Stack *s) {
 void stack_push(Stack *s, ListHead *item) {
     for (;;) {
         ListHead *old_head = s->head.next;
+        item->next = old_head;
         if (atomic_compare_exchange_strong(&s->head.next, &old_head, item)) {
             break;
         }

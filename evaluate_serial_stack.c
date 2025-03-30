@@ -1,5 +1,5 @@
 #include "container_of.h"
-#include "randlong.h"
+#include "random.h"
 #include "stack.h"
 #include <errno.h>
 #include <limits.h>
@@ -36,7 +36,7 @@ static void *thread_fn(void *args) {
         int a = random_action(s);
         if (a == ACTION_PUSH) {
             LongList *node = malloc(sizeof(LongList));
-            if (!node) {
+            if (node) {
                 node->key = randlong(s->x16v, 0, 100);
                 stack_push(s->stack, &node->list);
                 s->stats++;

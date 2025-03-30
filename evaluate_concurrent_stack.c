@@ -1,5 +1,5 @@
 #include "container_of.h"
-#include "randlong.h"
+#include "random.h"
 #include "stack.h"
 #include <errno.h>
 #include <limits.h>
@@ -11,8 +11,6 @@
 #include <string.h>
 #include <sys/time.h>
 #include <time.h>
-
-#define ACTION_PUSH 0
 
 typedef struct ThreadState {
     short int x16v[3];
@@ -34,9 +32,9 @@ static void *thread_fn(void *args) {
     ThreadState *s = (ThreadState*)args;
     while (!s->quit) {
         int a = random_action(s);
-        if (a == ACTION_PUSH) {
+        if (a) {
             LongList *node = malloc(sizeof(LongList));
-            if (!node) {
+            if (node) {
                 node->key = randlong(s->x16v, 0, 100);
                 stack_push(s->stack, &node->list);
                 s->stats++;
@@ -73,6 +71,16 @@ int main(int argc, const char **argv) {
         return -1;
     }
     Stack stack;
+#ifdef BACKOFF_VERSION
+    BackoffSpec spec = {.max_no_tries=8, .max_sleep_time=.5};
+    stack.ctx = &spec;
+#elif  MUTEX_VERSION
+    pthread_mutex_t mutex;
+    stack.ctx = &mutex;
+#elif  SPINLOCK_VERSION
+    pthread_spinlock_t lock;
+    stack.ctx = &lock;
+#endif
     if (stack_init(&stack)) {
         return -1;
     }

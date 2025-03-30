@@ -3,13 +3,17 @@
 #include "list.h"
 #include <pthread.h>
 
+#ifdef BACKOFF_VERSION
+typedef struct BackoffSpec {
+    long   max_no_tries;
+    double max_sleep_time;
+    short  x16v[3];
+} BackoffSpec;
+#endif
+
 typedef struct Stack {
     ListHead head;
-#ifdef SPINLOCK_VERSION
-    pthread_spinlock_t lock;
-#elif  MUTEX_VERSION
-    pthread_mutex_t lock;
-#endif
+    void     *ctx;
 } Stack;
 
 int stack_init(Stack *s);
