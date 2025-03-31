@@ -7,11 +7,9 @@ int stack_init(Stack *s) {
 
 ListHead *stack_pop(Stack *s) {
     for (;;) {
-        if (!s->head.next) {
-            return NULL;
-        }
         ListHead *old_head = s->head.next;
-        if (__sync_bool_compare_and_swap((long*)&s->head.next, old_head, old_head->next)) {
+        ListHead *new_head = old_head != NULL ? old_head->next : NULL;
+        if (__sync_bool_compare_and_swap((long*)&s->head.next, old_head, new_head)) {
             return old_head;
         }
     }

@@ -44,10 +44,10 @@ static void *thread_fn(void *args) {
         } else {
             ListHead *list = stack_pop(s->stack);
             if (list) {
-                LongList *node = container_of(list, LongList, list);
-                free(node);
+                // L'algoritmo non funziona se si libera la memoria (potrebbe
+                // portare a segmentation fault).
+                s->stats++;
             }
-            s->stats++;
         }
     }
     return NULL;

@@ -44,10 +44,8 @@ ListHead *stack_pop(Stack *s) {
             break;
         }
         ListHead *old_head = s->head.next;
-        if (!old_head) {
-            break;
-        }
-        if (__sync_bool_compare_and_swap((long*)s->head.next, old_head, old_head->next) || n >= backoff_spec->max_no_tries) {
+        ListHead *new_head = old_head != NULL ? old_head->next : NULL;
+        if (__sync_bool_compare_and_swap((long*)&s->head.next, old_head, new_head)) {
             return old_head;
         }
     }
@@ -64,10 +62,9 @@ void stack_push(Stack *s, ListHead *item) {
             printf("nanosleep() failed, got error \"%s\" (%d)", strerror(errno), errno);
             break;
         }
-        ListHead *old_head = s->head.next;
-        item->next = old_head;
-        if (__sync_bool_compare_and_swap((long*)s->head.next, old_head, item) || n >= backoff_spec->max_no_tries) {
-            break;
+        item->next = s->head.next;
+        if (__sync_bool_compare_and_swap((long*)&s->head.next, s->head.next, item)) {
+            return;
         }
     }
 }

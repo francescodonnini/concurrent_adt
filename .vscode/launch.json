@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/stack_cas",
-            "args": ["1", "10000"],
+            "args": ["2", "2"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/",
             "environment": [],
