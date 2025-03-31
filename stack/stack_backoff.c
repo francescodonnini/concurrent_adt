@@ -13,10 +13,9 @@ int stack_init(Stack *s) {
 }
 
 static struct timespec* to_timespec(struct timespec *duration, double seconds) {
-    long whole_part = (long) floor(seconds);
-    double frac_part = seconds - whole_part;
-    duration->tv_sec = whole_part;
-    duration->tv_nsec = frac_part * 1e9;
+    double f = floor(seconds);
+    duration->tv_sec = f;
+    duration->tv_nsec = (seconds - f) * 1e9;
     return duration;
 }
 

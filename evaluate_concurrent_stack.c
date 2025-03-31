@@ -84,7 +84,7 @@ int main(int argc, const char **argv) {
     }
     Stack stack;
 #ifdef BACKOFF_VERSION
-    BackoffSpec spec = {.max_no_tries=8, .max_sleep_time=.5};
+    BackoffSpec spec = {.max_no_tries=4, .max_sleep_time=0.00005};
     stack.ctx = &spec;
 #elif  MUTEX_VERSION
     pthread_mutex_t mutex;
