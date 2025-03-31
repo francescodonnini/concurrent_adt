@@ -111,7 +111,7 @@ int main(int argc, const char **argv) {
     state.quit = true;
     pthread_join(tid, NULL);
     printf("total number of ops in %d seconds is %ld\n", observation_time, state.stats);
-    ListHead *it = set.head;
+    ListHead *it = set.head->next;
     while (it != set.tail) {
         ListHead *next = it->next;
         LongList *node = container_of(it, LongList, list);
