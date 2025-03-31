@@ -1,21 +1,16 @@
 #ifndef SET_H
 #define SET_H
 #include "list.h"
-#include <pthread.h>
 #include <stdbool.h>
 
 typedef struct Set {
     ListHead *head;
     ListHead *tail;
     int (*cmp)(ListHead *a, ListHead *b);
-#ifdef SPINLOCK_VERSION
-    pthread_spinlock_t lock;
-#elif  MUTEX_VERSION
-    pthread_mutex_t lock;    
-#endif
+    void *ctx;
 } Set;
 
-static void __set_init(
+static inline void __set_init(
     Set *set,
     ListHead *head,
     ListHead *tail,

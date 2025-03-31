@@ -1,5 +1,5 @@
 #include "stack.h"
-#include <bits/pthreadtypes.h>
+#include <pthread.h>
 
 int stack_init(Stack *s) {
     pthread_spinlock_t *lock = (pthread_spinlock_t*)s->ctx;

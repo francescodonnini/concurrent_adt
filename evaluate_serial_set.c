@@ -1,5 +1,5 @@
 #include "container_of.h"
-#include "randlong.h"
+#include "random.h"
 #include "set.h"
 #include <errno.h>
 #include <limits.h>
@@ -55,7 +55,8 @@ static void *thread_fn(void *args) {
                 s->stats++;
             }
         } else {
-            ListHead *list = set_remove(s->set);
+            LongList node = {.key=randlong(s->x16v, 0, 100)};
+            ListHead *list = set_remove(s->set, &node.list);
             if (list) {
                 LongList *node = container_of(list, LongList, list);
                 free(node);

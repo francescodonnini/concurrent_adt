@@ -1,4 +1,5 @@
 #include "stack.h"
+#include <stddef.h>
 
 int stack_init(Stack *s) {
     s->head.next = NULL;

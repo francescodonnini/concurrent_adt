@@ -1,7 +1,6 @@
 #ifndef STACK_H
 #define STACK_H
 #include "list.h"
-#include <pthread.h>
 
 #ifdef BACKOFF_VERSION
 typedef struct BackoffSpec {

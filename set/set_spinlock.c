@@ -1,4 +1,5 @@
 #include "set.h"
+#include <pthread.h>
 #include <stddef.h>
 
 int set_init(
@@ -7,7 +8,11 @@ int set_init(
     ListHead *tail,
     int (*cmp)(ListHead *a, ListHead *b)) {
     __set_init(set, head, tail, cmp);
-    int err = pthread_spin_init(&set->lock, PTHREAD_PROCESS_PRIVATE);
+    pthread_spinlock_t *lock = (pthread_spinlock_t*)set->ctx;
+    int err = pthread_spin_init(lock, PTHREAD_PROCESS_PRIVATE);
+    if (err) {
+        return err;
+    }
     return err;
 }
 
@@ -33,18 +38,20 @@ static bool __set_find(Set *set, ListHead *key, ListHead **prec, ListHead **succ
 }
 
 bool set_find(Set *set, ListHead *key) {
-    int err = pthread_spin_lock(&set->lock);
+    pthread_spinlock_t *lock = (pthread_spinlock_t*)set->ctx;
+    int err = pthread_spin_lock(lock);
     if (err) {
         return false;
     }
     ListHead *prec, *succ;
     bool b = __set_find(set, key, &prec, &succ);
-    pthread_spin_unlock(&set->lock);
+    pthread_spin_unlock(lock);
     return b;
 }
 
 bool set_insert(Set *set, ListHead *key) {
-    int err = pthread_spin_lock(&set->lock);
+    pthread_spinlock_t *lock = (pthread_spinlock_t*)set->ctx;
+    int err = pthread_spin_lock(lock);
     if (err) {
         return false;
     }
@@ -54,12 +61,13 @@ bool set_insert(Set *set, ListHead *key) {
         prec->next = key;
         key->next = succ;
     }
-    pthread_spin_unlock(&set->lock);
+    pthread_spin_unlock(lock);
     return b ? false : true;
 }
 
 ListHead* set_remove(Set *set, ListHead *key) {
-    int err = pthread_spin_lock(&set->lock);
+    pthread_spinlock_t *lock = (pthread_spinlock_t*)set->ctx;
+    int err = pthread_spin_lock(lock);
     if (err) {
         return false;
     }
@@ -68,6 +76,6 @@ ListHead* set_remove(Set *set, ListHead *key) {
     if (b) {
         prec->next = succ->next;
     }
-    pthread_spin_unlock(&set->lock);
+    pthread_spin_unlock(lock);
     return b ? succ : NULL;
 }

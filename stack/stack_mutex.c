@@ -1,4 +1,5 @@
 #include "stack.h"
+#include <pthread.h>
 
 int stack_init(Stack *s) {
     pthread_mutex_t *mutex = (pthread_mutex_t*)s->ctx;

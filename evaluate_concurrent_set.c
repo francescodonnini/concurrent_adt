@@ -1,5 +1,5 @@
 #include "container_of.h"
-#include "randlong.h"
+#include "random.h"
 #include "set.h"
 #include <errno.h>
 #include <limits.h>
@@ -58,8 +58,12 @@ static void *thread_fn(void *args) {
             LongList node = {.key=randlong(s->x16v, 0, 100)};
             ListHead *list = set_remove(s->set, &node.list);
             if (list) {
-                LongList *node = container_of(list, LongList, list);
-                free(node);
+#if defined(MUTEX_VERSION) && !defined(SPINLOCK_VERSION)
+                // L'algoritmo non funziona se si libera la memoria (potrebbe
+                // portare a segmentation fault).
+                LongList *n = container_of(n, LongList, list);
+                free(n);
+#endif
             }
             s->stats++;
         }

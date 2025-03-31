@@ -1,4 +1,5 @@
 #include "set.h"
+#include <pthread.h>
 #include <stddef.h>
 
 int set_init(
@@ -7,7 +8,8 @@ int set_init(
     ListHead *tail,
     int (*cmp)(ListHead *a, ListHead *b)) {
     __set_init(set, head, tail, cmp);
-    int err = pthread_mutex_init(&set->lock, NULL);
+    pthread_mutex_t *mutex = (pthread_mutex_t*)set->ctx;
+    int err = pthread_mutex_init(mutex, NULL);
     return err;
 }
 
@@ -33,18 +35,20 @@ static bool __set_find(Set *set, ListHead *key, ListHead **prec, ListHead **succ
 }
 
 bool set_find(Set *set, ListHead *key) {
-    int err = pthread_mutex_lock(&set->lock);
+    pthread_mutex_t *mutex = (pthread_mutex_t*)set->ctx;
+    int err = pthread_mutex_lock(mutex);
     if (err) {
         return false;
     }
     ListHead *prec, *succ;
     bool b = __set_find(set, key, &prec, &succ);
-    pthread_mutex_unlock(&set->lock);
+    pthread_mutex_unlock(mutex);
     return b;
 }
 
 bool set_insert(Set *set, ListHead *key) {
-    int err = pthread_mutex_lock(&set->lock);
+    pthread_mutex_t *mutex = (pthread_mutex_t*)set->ctx;
+    int err = pthread_mutex_lock(mutex);
     if (err) {
         return false;
     }
@@ -54,12 +58,13 @@ bool set_insert(Set *set, ListHead *key) {
         prec->next = key;
         key->next = succ;
     }
-    pthread_mutex_unlock(&set->lock);
+    pthread_mutex_unlock(mutex);
     return b ? false : true;
 }
 
 ListHead* set_remove(Set *set, ListHead *key) {
-    int err = pthread_mutex_lock(&set->lock);
+    pthread_mutex_t *mutex = (pthread_mutex_t*)set->ctx;
+    int err = pthread_mutex_lock(mutex);
     if (err) {
         return false;
     }
@@ -68,6 +73,6 @@ ListHead* set_remove(Set *set, ListHead *key) {
     if (b) {
         prec->next = succ->next;
     }
-    pthread_mutex_unlock(&set->lock);
+    pthread_mutex_unlock(mutex);
     return b ? succ : NULL;
 }
