@@ -2,6 +2,10 @@ set_mutex:
 	mkdir -p build
 	gcc set/set_mutex.c evaluate_concurrent_set.c -o build/set_mutex -Iinclude -DMUTEX_VERSION -g -lpthread
 
+set_harris:
+	mkdir -p build
+	gcc set/set_harris.c core/list.c evaluate_concurrent_set.c -o build/set_harris -Iinclude -lpthread -g
+
 set_serial:
 	mkdir -p build
 	gcc set/set_serial.c evaluate_serial_set.c -o build/set_serial -Iinclude -g -lpthread

@@ -19,7 +19,13 @@ typedef struct ThreadState {
     long      stats;
     Set       *set;
     bool      quit;
+    ListHead  mm_list;
 } ThreadState;
+
+typedef struct MemList {
+    ListHead list;
+    void     *mm_area;
+} MemList;
 
 typedef struct LongList {
     struct ListHead list;
@@ -48,23 +54,26 @@ static void *thread_fn(void *args) {
     while (!s->quit) {
         int a = random_action(s);
         if (a == ACTION_INSERT) {
-            LongList *node = malloc(sizeof(LongList));
-            if (node) {
-                node->key = randlong(s->x16v, 0, 100);
-                set_insert(s->set, &node->list);
-                s->stats++;
+            MemList * mm_node = malloc(sizeof(MemList));
+            if (mm_node) {
+                LongList *node = malloc(sizeof(LongList));
+                if (node) {
+                    node->key = randlong(s->x16v, 0, 100);
+                    set_insert(s->set, &node->list);
+                    s->stats++;
+                    mm_node->mm_area = node;
+                    list_add(&s->mm_list, &mm_node->list);
+                }
             }
         } else {
             LongList node = {.key=randlong(s->x16v, 0, 100)};
             ListHead *list = set_remove(s->set, &node.list);
+#if defined(MUTEX_VERSION) || defined(SPINLOCK_VERSION)
             if (list) {
-#if defined(MUTEX_VERSION) && !defined(SPINLOCK_VERSION)
-                // L'algoritmo non funziona se si libera la memoria (potrebbe
-                // portare a segmentation fault).
                 LongList *n = container_of(n, LongList, list);
                 free(n);
-#endif
             }
+#endif
             s->stats++;
         }
     }
@@ -73,6 +82,18 @@ static void *thread_fn(void *args) {
 
 static inline int strtol_error(int n) {
     return n == 0 || n == LONG_MIN || n == LONG_MAX;
+}
+
+static void free_memory(int n, ThreadState state[n]) {
+    for (int i = 0; i < n; ++i) {
+        ListHead *it = state[i].mm_list.next;
+        while (it != &state[i].mm_list) {
+            ListHead *next = it->next;
+            LongList *node = container_of(it, LongList, list);
+            free(node);
+            it = next;
+        }
+    }
 }
 
 int main(int argc, const char **argv) {
@@ -111,6 +132,7 @@ int main(int argc, const char **argv) {
         state[i].quit = false;
         state[i].set = &set;
         state[i].stats = 0;
+        state[i].mm_list.next = &state[i].mm_list;
         if (pthread_create(&tid[i], NULL, thread_fn,  (void*)&state[i])) {
             break;
         }
@@ -150,17 +172,11 @@ int main(int argc, const char **argv) {
     }
     long ops = 0;
     for (int i = 0; i < n; ++i) {
-        ops += state->stats;
+        ops += state[i].stats;
     }
     printf("total number of ops in %d seconds is %ld\n", observation_time, ops);
     free(tid);
+    free_memory(n, state);
     free(state);
-    ListHead *it = set.head->next;
-    while (it != set.tail) {
-        ListHead *next = it->next;
-        LongList *node = container_of(it, LongList, list);
-        free(node);
-        it = next;
-    }
     return 0;
 }
