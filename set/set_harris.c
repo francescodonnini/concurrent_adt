@@ -25,21 +25,27 @@ static inline bool is_marked_ref(ListHead *ptr) {
 
 ListHead* __search(Set *set, ListHead *key, ListHead **right) {
 retry:
+    // invarianti:
+    // left  = HEAD
+    // right = TAIL
     *right = set->tail;
     ListHead *left = set->head;
-    ListHead *it_real = left->next;
+    // it_raw è il puntatore al nodo successivo a HEAD che può essere marcato oppure no
+    // it     è it_raw a cui è stata applicata la maschera per portare il primo bit a 0 (in modo tale
+    //        che si possa usare come indirizzo valido).
+    ListHead *it_raw = left->next;
     ListHead *it = get_unmarked_ref(left->next);
     while (it != set->tail) {
-        if (!is_marked_ref(it_real)) {
-            if (set->cmp(it_real, key) < 0) {
-                left = it_real;
+        if (!is_marked_ref(it_raw)) {
+            if (set->cmp(it, key) < 0) {
+                left = it;
             } else {
-                *right = it_real;
+                *right = it;
                 break;
             }
         }
-        it_real = it->next;
-        it = get_unmarked_ref(it_real);
+        it_raw = it->next;
+        it = get_unmarked_ref(it_raw);
     }
     // In generale, quando il loop termina:
     // 1. left == HEAD or left == n s.t. n.key < key
@@ -71,16 +77,20 @@ retry:
 }
 
 ListHead* set_remove(Set *set, ListHead *key) {
-retry:
     ListHead *right;
-    __search(set, key, &right);
-    if (set->cmp(key, right)) {
-        return NULL;
-    }
-    ListHead *n = right->next;
-    if (is_marked_ref(n) || !__sync_bool_compare_and_swap(&right->next, n, get_marked_ref(n))) {
-        goto retry;
-    }
-    __search(set, key, &right);
-    return right;
+    do {
+        __search(set, key, &right);
+        if (right != set->tail || set->cmp(key, right)) {
+            return NULL;
+        }
+        // Abbiamo trovato la chiave corretta! Si proceda all'eliminazione logica
+        ListHead *n = right->next;
+        if (!is_marked_ref(n)) {
+            if (__sync_bool_compare_and_swap(&right->next, n, get_marked_ref(n))) {
+                ListHead *t;
+                __search(set, key, &t);
+                return right;
+            }
+        }
+    } while (true);
 }

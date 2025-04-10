@@ -1,6 +1,6 @@
 set_mutex:
 	mkdir -p build
-	gcc set/set_mutex.c evaluate_concurrent_set.c -o build/set_mutex -Iinclude -DMUTEX_VERSION -g -lpthread
+	gcc core/list.c set/set_mutex.c evaluate_concurrent_set.c -o build/set_mutex -Iinclude -DMUTEX_VERSION -g -lpthread
 
 set_harris:
 	mkdir -p build
@@ -12,7 +12,7 @@ set_serial:
 
 set_spinlock:
 	mkdir -p build
-	gcc set/set_spinlock.c evaluate_concurrent_set.c -o build/set_spinlock -Iinclude -DSPINLOCK_VERSION -g -lpthread
+	gcc core/list.c set/set_spinlock.c evaluate_concurrent_set.c -o build/set_spinlock -Iinclude -DSPINLOCK_VERSION -g -lpthread
 
 stack_backoff:
 	mkdir -p build
