@@ -69,14 +69,6 @@ static void *thread_fn(void *args) {
         } else {
             LongList node = {.key=randlong(s->x16v, 0, 100)};
             ListHead *list = set_remove(s->set, &node.list);
-// Non ha comunque senso farlo con le liste di Harris perché il nodo ritornato è solamente
-// logicamente eliminato.
-#if defined(MUTEX_VERSION) || defined(SPINLOCK_VERSION)
-            if (list) {
-                LongList *n = container_of(n, LongList, list);
-                free(n);
-            }
-#endif
             s->stats++;
         }
     }
